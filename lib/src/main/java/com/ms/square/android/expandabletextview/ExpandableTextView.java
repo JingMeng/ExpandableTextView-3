@@ -25,6 +25,7 @@ import android.graphics.drawable.Drawable;
 import android.os.Build;
 import android.text.TextUtils;
 import android.util.AttributeSet;
+import android.util.Log;
 import android.util.SparseBooleanArray;
 import android.view.MotionEvent;
 import android.view.View;
@@ -141,8 +142,20 @@ public class ExpandableTextView extends LinearLayout implements View.OnClickList
 
         Animation animation;
         if (mCollapsed) {
+            /**
+             *  getHeight() 当前大小 --- 这个大小是最大的代销，因为 上面的 onClick 第一步就是  mCollapsed = !mCollapsed;
+             *
+             *  mCollapsedHeight 是最终的大小，也就是最小的高度
+             */
             animation = new ExpandCollapseAnimation(this, getHeight(), mCollapsedHeight);
         } else {
+            /**
+             * getHeight() 得到的是最小高度
+             *
+             * mTextHeightWithMaxLines 是 textView 占用的真实大小
+             *
+             * mTextHeightWithMaxLines - mTv.getHeight() 得到的是被折叠的那部分大小
+             */
             animation = new ExpandCollapseAnimation(this, getHeight(), getHeight() +
                     mTextHeightWithMaxLines - mTv.getHeight());
         }
@@ -192,10 +205,27 @@ public class ExpandableTextView extends LinearLayout implements View.OnClickList
     @Override
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
         // If no change, measure and return
+        if (false) {
+            //fixme 虽然说这个地方依旧会执行，但是考虑 这个地方一直在测量，对view动画没有影响吗
+            Log.i(TAG, "========onMeasure=======" + System.currentTimeMillis());
+        }
         if (!mRelayout || getVisibility() == View.GONE) {
             super.onMeasure(widthMeasureSpec, heightMeasureSpec);
             return;
         }
+        /**
+         *
+         * 这个地方也仅仅会执行一次
+         * todo
+         *
+         * {@link  this#onClick(View)} }
+         *
+         *  因为点击的时候是使用动画修改的
+         *
+         *  并不是代表 动画不会导致 onMeasure 重新调用，是我们这部分重新计算不需要重新计算了
+         *
+         *  只有出现新的文本的时候才有必要进行新的计算
+         */
         mRelayout = false;
 
         // Setup with optimistic case
@@ -235,10 +265,22 @@ public class ExpandableTextView extends LinearLayout implements View.OnClickList
                      *  1.  mTv.getHeight() 获取的大小一定是实际的大小  也就是  setMaxLines 之后的大小
                      *
                      *  2. getHeight() 的大小是
+                     * @see View
+                     * {@link  View#layout(int, int, int, int)}
+                     * {@link  View#setFrame} 这个时间才会设置  左上右下这几个参数
+                     *
+                     */
+                    ViewGroup.MarginLayoutParams params = (MarginLayoutParams) mTv.getLayoutParams();
+                    int i = getHeight() - mTv.getHeight() - mToggleView.getHeight() - params.topMargin;
+                    /**
+                     * 这个高度是一个最大的可以调控的大小
                      */
                     mMarginBetweenTxtAndBottom = getHeight() - mTv.getHeight();
+                    //这个得到的 i 就不存在偏差了
+                    Log.i(TAG, "========mMarginBetweenTxtAndBottom=======" + mMarginBetweenTxtAndBottom + "=======" + i);
                 }
             });
+            //这个大小是 收缩之后的大小
             // Saves the collapsed height of this ViewGroup
             mCollapsedHeight = getMeasuredHeight();
         }
@@ -387,7 +429,9 @@ public class ExpandableTextView extends LinearLayout implements View.OnClickList
 
         @Override
         protected void applyTransformation(float interpolatedTime, Transformation t) {
+            //这个高度是当前view的高度
             final int newHeight = (int) ((mEndHeight - mStartHeight) * interpolatedTime + mStartHeight);
+            //这个最大高度是自己的高度，减掉的是空白区域的高度-----所以这个地方需要限制一下
             mTv.setMaxHeight(newHeight - mMarginBetweenTxtAndBottom);
             if (Float.compare(mAnimAlphaStart, 1.0f) != 0) {
                 applyAlphaAnimation(mTv, mAnimAlphaStart + interpolatedTime * (1.0f - mAnimAlphaStart));
