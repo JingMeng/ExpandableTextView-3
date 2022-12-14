@@ -23,6 +23,17 @@ import com.ms.square.android.mymodule.app.R;
  * Demo Activity which demos the features of the ExpandableTextView.
  *
  * @author Manabu-GT
+ * <p>
+ * <p>
+ * 这个是一个国代的大神的代码 可能和 square 还有一定的关联
+ * <p>
+ * 1. 这个布局需要按照聊天那个布局修改一下 ，就是如果能在最后一行就在最后一行
+ * telegram以及elemnet都是这样的
+ * <p>
+ * 2. 折叠的时候文本需要剪切一部分
+ * <p>
+ * <p>
+ * 3.  本质是做的高度动画，动态修改的    mTv.setMaxLines(mMaxCollapsedLines); 这个参数
  */
 public class DemoActivity extends AppCompatActivity {
 
