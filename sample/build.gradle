@@ -23,6 +23,7 @@ android {
 dependencies {
     compile fileTree(dir: 'libs', include: ['*.jar'])
     compile project(':lib')
-    compile "com.android.support:appcompat-v7:${supportPackageVersion}"
-    compile "com.android.support:design:${supportPackageVersion}"
+    compile "androidx.appcompat:appcompat:1.1.0"
+    compile "androidx.viewpager:viewpager:1.0.0"
+    compile "com.google.android.material:material:1.1.0"
 }
